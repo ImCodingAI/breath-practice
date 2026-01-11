@@ -2,7 +2,12 @@
  * Định nghĩa các Stage (Cấp độ) có sẵn trong ứng dụng.
  * 'custom' là ID đặc biệt cho chế độ tự do.
  */
-export type StageId = 1 | 2 | 3 | 4 | 'custom';
+export type StageId = 1 | 2 | 3 | 4 | 5 | 'custom';
+
+/**
+ * Giá trị cảm xúc từ 1 (Tiêu cực) đến 5 (Tích cực)
+ */
+export type MoodValue = 1 | 2 | 3 | 4 | 5;
 
 /**
  * Cấu trúc của một bước thở (Ví dụ: Hít vào, Nín thở...).

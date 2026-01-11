@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Wind, Heart, BarChart2, Flame, Settings, Moon, Sun } from 'lucide-react';
 import { STAGES_DATA } from './constants';
-import { StageId, StageData, DailyStat } from './types';
+import { StageId, StageData, DailyStat, MoodValue } from './types';
 import StageCard from './components/StageCard';
 import BreathingGuide from './components/BreathingGuide';
 import StageDetail from './components/StageDetail';
@@ -94,15 +94,15 @@ const App: React.FC = () => {
   const toggleDarkMode = () => setDarkMode(!darkMode);
 
   // Logic kết thúc bài tập
-  const handleSessionEnd = async (duration: number, isCompleted: boolean) => {
+  const handleSessionEnd = async (duration: number, isCompleted: boolean, moodBefore?: MoodValue, moodAfter?: MoodValue) => {
     const activeId = customStageData ? 'custom' : currentStageId;
     
     if (activeId) {
-      await saveSession(duration, activeId);
+      await saveSession(duration, activeId, moodBefore, moodAfter);
     }
 
     if (isCompleted && currentStageId && typeof currentStageId === 'number') {
-       if (currentStageId === progress && progress < 4) { // Update max progress to 4
+       if (currentStageId === progress && progress < 5) { // Update max progress
         const newProgress = progress + 1;
         setProgress(newProgress);
         await saveProgressToDB(newProgress);
@@ -117,7 +117,7 @@ const App: React.FC = () => {
     }
   };
 
-  const onGuideComplete = (duration: number) => handleSessionEnd(duration, true);
+  const onGuideComplete = (duration: number, moodBefore?: MoodValue, moodAfter?: MoodValue) => handleSessionEnd(duration, true, moodBefore, moodAfter);
   const onGuideExit = (duration: number) => handleSessionEnd(duration, false);
 
   const handleExitApp = () => {
@@ -218,7 +218,7 @@ const App: React.FC = () => {
         )}
 
         {/* Main Content */}
-        {!currentStageId && <ProgressBar currentLevel={progress} totalLevels={4} />}
+        {!currentStageId && <ProgressBar currentLevel={progress} totalLevels={5} />}
 
         <div className="relative min-h-[400px]">
           

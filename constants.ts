@@ -79,6 +79,23 @@ export const STAGES_DATA: StageData[] = [
       { action: 'exhale', label: 'Thở ra', duration: 8, scale: 1.0 },
     ],
   },
+  {
+    id: 5,
+    title: 'Thở Cộng Hưởng',
+    description: 'Kỹ thuật thở 5.5 nhịp/phút giúp tối ưu hóa biến thiên nhịp tim (HRV).',
+    color: 'bg-rose-100 dark:bg-rose-900',
+    benefits: [
+      'Tăng cường khả năng phục hồi',
+      'Tối ưu hóa trao đổi khí',
+      'Cải thiện sự ổn định cảm xúc'
+    ],
+    instruction: 'Thở chậm, đều và nhịp nhàng. Không nín thở, tạo thành một vòng tròn liên tục.',
+    steps: [
+      // Chu kỳ 5.5s Hít - 5.5s Thở (Khoảng 11s/chu kỳ)
+      { action: 'inhale', label: 'Hít vào', duration: 5.5, scale: 1.5 },
+      { action: 'exhale', label: 'Thở ra', duration: 5.5, scale: 1.0 },
+    ]
+  }
 ];
 
 /**

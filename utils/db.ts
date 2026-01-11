@@ -1,15 +1,15 @@
-import { DailyStat } from '../types';
-import { format, subDays, isSameDay, parseISO, startOfDay } from 'date-fns';
+import { DailyStat, MoodValue } from '../types';
+import { format, subDays, isSameDay, startOfDay } from 'date-fns';
 
 /**
  * Tiện ích quản lý IndexedDB.
  * Stores:
  * 1. user_progress: { id: 'main_progress', level: number }
- * 2. sessions: { id: autoIncrement, date: ISOString, durationSeconds: number, stageId: number|string }
+ * 2. sessions: { id: autoIncrement, date: ISOString, durationSeconds: number, stageId: number|string, moodBefore?: number, moodAfter?: number }
  */
 
 const DB_NAME = 'SereneBreathDB';
-const DB_VERSION = 2; // Bump version to add new store
+const DB_VERSION = 3; // Bump version to support new fields if needed, structured clone handles it mostly
 const STORE_PROGRESS = 'user_progress';
 const STORE_SESSIONS = 'sessions';
 const PROGRESS_KEY = 'main_progress';
@@ -66,7 +66,12 @@ export const saveProgressToDB = async (level: number): Promise<void> => {
 /**
  * Lưu một phiên tập luyện vào lịch sử
  */
-export const saveSession = async (durationSeconds: number, stageId: number | string): Promise<void> => {
+export const saveSession = async (
+  durationSeconds: number, 
+  stageId: number | string,
+  moodBefore?: MoodValue,
+  moodAfter?: MoodValue
+): Promise<void> => {
   if (durationSeconds < 10) return; // Bỏ qua các session quá ngắn (< 10s)
   
   const db = await openDB();
@@ -74,7 +79,9 @@ export const saveSession = async (durationSeconds: number, stageId: number | str
   tx.objectStore(STORE_SESSIONS).add({
     date: new Date().toISOString(),
     durationSeconds,
-    stageId
+    stageId,
+    moodBefore,
+    moodAfter
   });
 };
 
@@ -106,7 +113,7 @@ export const getWeeklyStats = async (): Promise<DailyStat[]> => {
   // Tính tổng thời gian cho từng ngày
   const stats = last7Days.map(day => {
     const totalSeconds = sessions
-      .filter(s => isSameDay(parseISO(s.date), day.dateObj))
+      .filter(s => isSameDay(new Date(s.date), day.dateObj))
       .reduce((sum, s) => sum + s.durationSeconds, 0);
     
     return {
@@ -137,7 +144,7 @@ export const calculateStreak = async (): Promise<number> => {
 
   // Sắp xếp giảm dần theo ngày
   const sortedDates = sessions
-    .map(s => startOfDay(parseISO(s.date)).getTime())
+    .map(s => startOfDay(new Date(s.date)).getTime())
     .sort((a, b) => b - a);
   
   // Loại bỏ trùng lặp ngày
