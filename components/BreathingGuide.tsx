@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Check, Quote, Volume2, VolumeX, CloudRain, Trees, Volume1, Flame, Droplets, Smile, Frown, Meh, Annoyed } from 'lucide-react';
+import { X, Check, Quote, Smile, Frown, Meh, Annoyed } from 'lucide-react';
 import { StageData, MoodValue } from '../types';
 import { INSPIRATIONAL_QUOTES } from '../constants';
 import BreathingCircle from './BreathingCircle';
-import { useBreathingSound, AmbientType } from '../hooks/useBreathingSound';
 
 interface BreathingGuideProps {
   stage: StageData;
@@ -21,13 +20,10 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
   const [isActive, setIsActive] = useState(false);           
   const [completedCycles, setCompletedCycles] = useState(0);   
   const [randomQuote, setRandomQuote] = useState('');          
-  const [showAmbientMenu, setShowAmbientMenu] = useState(false);
   
   // Mood State
   const [moodBefore, setMoodBefore] = useState<MoodValue | undefined>(undefined);
   const [moodAfter, setMoodAfter] = useState<MoodValue | undefined>(undefined);
-
-  const { playInhale, playExhale, toggleMute, isMuted, currentAmbient, setAmbient } = useBreathingSound();
 
   useEffect(() => {
     // Only start timer/activity if we are in the breathing step
@@ -54,14 +50,6 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
       return newCount;
     });
   }, []);
-
-  const handleStepChange = useCallback((action: 'inhale' | 'exhale' | 'hold') => {
-    if (action === 'inhale') {
-      playInhale();
-    } else if (action === 'exhale') {
-      playExhale();
-    }
-  }, [playInhale, playExhale]);
 
   useEffect(() => {
     if (stage.id !== 'custom' && completedCycles >= TARGET_CYCLES && currentStep === 'breathing') {
@@ -185,60 +173,7 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
         </div>
         
         <div className="flex items-center gap-2">
-           {/* Ambient Sound Menu Trigger */}
-           <div className="relative">
-             <button 
-              onClick={() => setShowAmbientMenu(!showAmbientMenu)}
-              className={`p-2 rounded-full transition-colors ${currentAmbient !== 'none' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}
-              title="Nhạc nền"
-            >
-              <Volume1 size={24} />
-            </button>
-            
-            {showAmbientMenu && (
-              <div className="absolute right-0 top-12 bg-white dark:bg-slate-800 shadow-xl rounded-2xl p-2 w-48 border border-slate-100 dark:border-slate-700 flex flex-col gap-1 animate-fade-in z-50">
-                <button 
-                  onClick={() => { setAmbient('none'); setShowAmbientMenu(false); }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium w-full text-left ${currentAmbient === 'none' ? 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
-                >
-                  <VolumeX size={16} /> Tắt nhạc nền
-                </button>
-                <button 
-                  onClick={() => { setAmbient('rain'); setShowAmbientMenu(false); }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium w-full text-left ${currentAmbient === 'rain' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
-                >
-                  <CloudRain size={16} /> Tiếng mưa
-                </button>
-                <button 
-                  onClick={() => { setAmbient('forest'); setShowAmbientMenu(false); }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium w-full text-left ${currentAmbient === 'forest' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
-                >
-                  <Trees size={16} /> Tiếng rừng
-                </button>
-                <button 
-                  onClick={() => { setAmbient('fire'); setShowAmbientMenu(false); }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium w-full text-left ${currentAmbient === 'fire' ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
-                >
-                  <Flame size={16} /> Lửa trại
-                </button>
-                <button 
-                  onClick={() => { setAmbient('stream'); setShowAmbientMenu(false); }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium w-full text-left ${currentAmbient === 'stream' ? 'bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
-                >
-                  <Droplets size={16} /> Suối chảy
-                </button>
-              </div>
-            )}
-           </div>
-
-          <button 
-            onClick={toggleMute}
-            className={`p-2 rounded-full transition-colors ${!isMuted ? 'bg-blue-50 text-blue-500 dark:bg-blue-900 dark:text-blue-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}
-            title={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}
-          >
-            {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
-          </button>
-
+          {/* Audio Controls Removed */}
           <button 
             onClick={handleExitClick}
             className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
@@ -254,7 +189,6 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
           isActive={isActive} 
           onSessionTick={handleSessionTick}
           onCycleComplete={handleCycleComplete}
-          onStepChange={handleStepChange}
         />
       </div>
 

@@ -2,7 +2,11 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <meta name="description" content="Ứng dụng hướng dẫn hít thở giúp thư giãn, giảm căng thẳng và tăng cường sự tập trung.">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <title>Hơi Thở Tĩnh Lặng</title>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script type="importmap">
@@ -17,12 +21,12 @@
     "recharts": "https://esm.sh/recharts@^3.6.0",
     "vite": "https://esm.sh/vite@^7.3.1",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "howler": "https://esm.sh/howler@^2.2.4"
+    "vite-plugin-pwa": "https://esm.sh/vite-plugin-pwa@^1.2.0"
   }
 }
 </script>
 </head>
-  <body class="bg-slate-50 text-slate-800">
+  <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
