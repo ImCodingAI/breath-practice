@@ -7,23 +7,38 @@ interface BreathingCircleProps {
   isActive: boolean;
   onSessionTick?: () => void;
   onCycleComplete?: () => void;
+  onStepChange?: (action: 'inhale' | 'exhale' | 'hold') => void;
 }
 
 /**
  * Component hiển thị người ngồi thiền với luồng khí luân chuyển.
- * Sử dụng Keyframes cx/cy để mô phỏng đường cong Bezier.
- * Sử dụng Date.now() để tính toán thời gian trôi qua chính xác, tránh drift.
  */
-const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSessionTick, onCycleComplete }) => {
+const BreathingCircle: React.FC<BreathingCircleProps> = ({ 
+  stage, 
+  isActive, 
+  onSessionTick, 
+  onCycleComplete,
+  onStepChange
+}) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  // Chúng ta dùng state để trigger render UI (số giây đếm ngược)
   const [timeLeft, setTimeLeft] = useState(stage.steps[0].duration);
   
-  // Ref để theo dõi thời gian thực tế
   const startTimeRef = useRef<number | null>(null);
   const lastTickRef = useRef<number>(0);
+  const hasStartedRef = useRef<boolean>(false);
 
   const currentStep: BreathingStep = stage.steps[currentStepIndex];
+
+  // Effect để kích hoạt âm thanh ngay khi bắt đầu (First Start)
+  useEffect(() => {
+    if (isActive && !hasStartedRef.current && onStepChange) {
+      onStepChange(stage.steps[0].action);
+      hasStartedRef.current = true;
+    }
+    if (!isActive) {
+      hasStartedRef.current = false;
+    }
+  }, [isActive, onStepChange, stage.steps]);
 
   // --- LOGIC NHỊP ĐỘ CHÍNH XÁC ---
   useEffect(() => {
@@ -32,10 +47,9 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSe
       return;
     }
 
-    // Nếu bắt đầu bước mới, ghi lại mốc thời gian
     if (startTimeRef.current === null) {
       startTimeRef.current = Date.now();
-      lastTickRef.current = 0; // Reset tick counter for this step
+      lastTickRef.current = 0; 
     }
 
     const interval = setInterval(() => {
@@ -47,12 +61,9 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSe
       
       const remaining = Math.max(0, stepDuration - elapsedSeconds);
       
-      // Cập nhật UI đếm ngược (làm tròn lên để hiển thị 4, 3, 2, 1)
       const displayTime = Math.ceil(remaining);
-      setTimeLeft(displayTime === 0 ? 1 : displayTime); // Giữ số 1 cho đến khoảnh khắc chuyển giao
+      setTimeLeft(displayTime === 0 ? 1 : displayTime);
 
-      // Logic Tick mỗi giây (gọi callback ra ngoài)
-      // Chúng ta so sánh phần nguyên của elapsedSeconds để biết đã qua 1 giây chưa
       const currentTick = Math.floor(elapsedSeconds);
       if (currentTick > lastTickRef.current) {
         if (onSessionTick) onSessionTick();
@@ -64,23 +75,25 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSe
         // Chuyển bước
         const nextIndex = (currentStepIndex + 1) % stage.steps.length;
         
-        // Reset thời gian cho bước mới
+        // Trigger âm thanh
+        if (onStepChange) {
+          onStepChange(stage.steps[nextIndex].action);
+        }
+
         startTimeRef.current = Date.now();
         lastTickRef.current = 0;
         
-        // Cập nhật State
         if (nextIndex === 0 && onCycleComplete) {
           onCycleComplete();
         }
         setCurrentStepIndex(nextIndex);
         setTimeLeft(stage.steps[nextIndex].duration);
       }
-    }, 50); // Check tần suất cao (50ms) để đảm bảo độ chính xác
+    }, 50);
 
     return () => clearInterval(interval);
-  }, [isActive, currentStepIndex, stage.steps, currentStep.duration, onSessionTick, onCycleComplete]);
+  }, [isActive, currentStepIndex, stage.steps, currentStep.duration, onSessionTick, onCycleComplete, onStepChange]);
 
-  // Reset state khi dừng
   useEffect(() => {
     if (!isActive) {
       setCurrentStepIndex(0);
@@ -90,8 +103,6 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSe
   }, [isActive, stage]);
 
   // --- ANIMATION CONFIGURATION ---
-
-  // Tọa độ Keyframes mô phỏng đường cong Bezier
   const pathPoints = {
     top: { cx: 100, cy: 30 },
     midTop: { cx: 112, cy: 65 },
@@ -100,7 +111,6 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSe
   };
 
   const getBallAnimation = (action: string, duration: number): TargetAndTransition => {
-    // Hít vào: Top -> Bottom
     if (action === 'inhale') {
       return {
         cx: [pathPoints.top.cx, pathPoints.midTop.cx, pathPoints.midBot.cx, pathPoints.bot.cx],
@@ -112,7 +122,6 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSe
       };
     }
     
-    // Thở ra: Bottom -> Top
     if (action === 'exhale') {
       return {
         cx: [pathPoints.bot.cx, pathPoints.midBot.cx, pathPoints.midTop.cx, pathPoints.top.cx],
@@ -124,7 +133,6 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSe
       };
     }
 
-    // Nín thở
     if (action === 'hold') {
       const isFull = currentStep.scale > 1.2;
       const targetPos = isFull ? pathPoints.bot : pathPoints.top;
@@ -166,7 +174,6 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSe
             </linearGradient>
           </defs>
 
-          {/* VÒNG TRÒN PULSE NỀN - ACTIVITY INDICATOR */}
           <motion.circle
             cx="100"
             cy="100"
@@ -186,7 +193,6 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSe
             }}
           />
 
-          {/* DÁNG NGƯỜI */}
           <path
             d="M100,20 C115,20 125,30 130,45 C135,60 150,70 160,90 C170,110 180,160 140,175 L60,175 C20,160 30,110 40,90 C50,70 65,60 70,45 C75,30 85,20 100,20 Z"
             fill="url(#bodyGradient)"
@@ -195,11 +201,9 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSe
           />
           <path d="M60,175 Q100,190 140,175" fill="none" stroke="#94a3b8" strokeWidth="1.5" opacity="0.5" />
 
-          {/* HUYỆT ĐẠO */}
           <circle cx="100" cy="30" r="2" fill="#94a3b8" opacity="0.5" />
           <circle cx="100" cy="140" r="3" fill="#94a3b8" opacity="0.8" />
 
-          {/* ĐƯỜNG DẪN KHÍ */}
           <path
             d={visualPath}
             fill="none"
@@ -209,13 +213,11 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSe
             opacity="0.6"
           />
 
-          {/* VIÊN NGỌC KHÍ */}
           <motion.circle
             r="6"
             animate={getBallAnimation(currentStep.action, currentStep.duration)}
           />
           
-          {/* AURA */}
           <AnimatePresence>
             {currentStep.action === 'inhale' && (
               <motion.path
@@ -260,14 +262,6 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({ stage, isActive, onSe
           </motion.div>
         </AnimatePresence>
       </div>
-      
-      <div className="absolute top-1/4 right-4 md:right-10 text-xs text-slate-300 font-bold hidden md:block">
-        &larr; Đỉnh đầu
-      </div>
-      <div className="absolute bottom-1/3 right-4 md:right-10 text-xs text-slate-300 font-bold hidden md:block">
-        &larr; Đan điền
-      </div>
-
     </div>
   );
 };

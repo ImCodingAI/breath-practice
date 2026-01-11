@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Check, Quote } from 'lucide-react';
+import { X, Check, Quote, Volume2, VolumeX } from 'lucide-react';
 import { StageData } from '../types';
 import { INSPIRATIONAL_QUOTES } from '../constants';
 import BreathingCircle from './BreathingCircle';
+import { useBreathingSound } from '../hooks/useBreathingSound';
 
 interface BreathingGuideProps {
   stage: StageData;
@@ -10,54 +11,51 @@ interface BreathingGuideProps {
   onExit: (duration: number) => void;     
 }
 
-// Số vòng lặp cần thiết để hoàn thành bài tập (Gamification)
 const TARGET_CYCLES = 10;
 
-/**
- * Component quản lý phiên tập luyện (Session Manager).
- * Chịu trách nhiệm về: Thời gian, Đếm chu kỳ, và Màn hình kết quả.
- */
 const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onExit }) => {
-  const [sessionDuration, setSessionDuration] = useState(0); // Tổng thời gian tập (giây)
-  const [isActive, setIsActive] = useState(false);           // Trạng thái chạy/dừng
-  const [showCompletion, setShowCompletion] = useState(false); // Trạng thái hiển thị màn hình chúc mừng
-  const [completedCycles, setCompletedCycles] = useState(0);   // Số chu kỳ đã hoàn thành
-  const [randomQuote, setRandomQuote] = useState('');          // Trích dẫn ngẫu nhiên
+  const [sessionDuration, setSessionDuration] = useState(0); 
+  const [isActive, setIsActive] = useState(false);           
+  const [showCompletion, setShowCompletion] = useState(false); 
+  const [completedCycles, setCompletedCycles] = useState(0);   
+  const [randomQuote, setRandomQuote] = useState('');          
 
-  // Tự động bắt đầu sau 0.5s để UI render xong mượt mà
+  const { playInhale, playExhale, toggleMute, isMuted } = useBreathingSound();
+
   useEffect(() => {
     const startTimer = setTimeout(() => setIsActive(true), 500);
     return () => clearTimeout(startTimer);
   }, []);
 
-  // Xử lý khi kết thúc (dù do người dùng bấm hay tự động)
   const handleFinish = useCallback(() => {
     setIsActive(false);
-    // Chọn random 1 câu quote từ constants
     const quote = INSPIRATIONAL_QUOTES[Math.floor(Math.random() * INSPIRATIONAL_QUOTES.length)];
     setRandomQuote(quote);
     setShowCompletion(true);
   }, []);
 
-  // Handler: Gọi mỗi giây từ BreathingCircle
-  // Sử dụng useCallback để đảm bảo function identity ổn định, tránh re-render con
   const handleSessionTick = useCallback(() => {
     setSessionDuration(prev => prev + 1);
   }, []);
 
-  // Handler: Gọi khi BreathingCircle chạy hết 1 vòng các bước
   const handleCycleComplete = useCallback(() => {
     setCompletedCycles(prev => {
       const newCount = prev + 1;
-      // Chế độ Custom không có Target Cycle cố định, nhưng ta cứ để 10 cho thống nhất
       if (newCount >= TARGET_CYCLES && stage.id !== 'custom') {
-        return newCount; // Effect sẽ trigger finish
+        return newCount; 
       }
       return newCount;
     });
   }, [stage.id]);
 
-  // Effect theo dõi completion (chỉ áp dụng cho bài tập có sẵn, custom thì tập thoải mái)
+  const handleStepChange = useCallback((action: 'inhale' | 'exhale' | 'hold') => {
+    if (action === 'inhale') {
+      playInhale();
+    } else if (action === 'exhale') {
+      playExhale();
+    }
+  }, [playInhale, playExhale]);
+
   useEffect(() => {
     if (stage.id !== 'custom' && completedCycles >= TARGET_CYCLES && isActive) {
       handleFinish();
@@ -65,19 +63,17 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
   }, [completedCycles, isActive, handleFinish, stage.id]);
 
   const confirmCompletion = () => {
-    onComplete(sessionDuration); // Gửi duration về App để lưu DB
+    onComplete(sessionDuration); 
   };
 
   const handleExitClick = () => {
-    onExit(sessionDuration); // Gửi duration về App để lưu DB
+    onExit(sessionDuration); 
   };
 
-  // --- MÀN HÌNH CHÚC MỪNG (SUCCESS SCREEN) ---
   if (showCompletion) {
     return (
       <div className="flex flex-col items-center justify-center h-full animate-fade-in text-center p-6 bg-slate-50 min-h-screen">
         <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border border-slate-100 relative overflow-hidden">
-           {/* Thanh trang trí gradient trên cùng */}
            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-emerald-400"></div>
 
           <div className="mb-6 flex justify-center mt-4">
@@ -91,7 +87,6 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
              Bạn đã thư giãn trong {Math.floor(sessionDuration / 60)} phút {sessionDuration % 60} giây.
           </p>
 
-          {/* Quote Block */}
           <div className="bg-slate-50 p-6 rounded-xl mb-8 relative">
             <Quote className="w-8 h-8 text-blue-200 absolute -top-3 -left-2 fill-current" />
             <p className="text-slate-700 italic font-medium leading-relaxed z-10 relative">
@@ -110,11 +105,9 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
     );
   }
 
-  // --- MÀN HÌNH TẬP LUYỆN (PRACTICE SCREEN) ---
   return (
     <div className="relative flex flex-col items-center justify-between h-screen w-full max-w-md mx-auto py-6">
       
-      {/* Top Bar: Tiêu đề & Đếm chu kỳ */}
       <div className="w-full flex justify-between items-center px-6 pt-2">
         <div className="flex flex-col">
           <h2 className="text-xl font-bold text-slate-700">{stage.title}</h2>
@@ -125,6 +118,14 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
         
         <div className="flex items-center gap-2">
           <button 
+            onClick={toggleMute}
+            className={`p-2 rounded-full transition-colors ${!isMuted ? 'bg-blue-50 text-blue-500' : 'bg-slate-100 text-slate-400'}`}
+            title={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}
+          >
+            {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
+          </button>
+
+          <button 
             onClick={handleExitClick}
             className="p-2 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
           >
@@ -133,17 +134,16 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
         </div>
       </div>
 
-      {/* Khu vực trung tâm: Animation */}
       <div className="flex-1 flex flex-col items-center justify-center w-full px-4">
         <BreathingCircle 
           stage={stage} 
           isActive={isActive} 
           onSessionTick={handleSessionTick}
           onCycleComplete={handleCycleComplete}
+          onStepChange={handleStepChange}
         />
       </div>
 
-      {/* Bottom Control: Nút kết thúc sớm */}
       <div className="w-full px-8 pb-8 text-center">
         <p className="text-slate-500 mb-10 italic text-sm font-medium opacity-80 animate-pulse">
           "Hãy tập trung vào hơi thở, thả lỏng vai và thư giãn tâm trí."
