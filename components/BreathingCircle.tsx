@@ -10,9 +10,6 @@ interface BreathingCircleProps {
   onStepChange?: (action: 'inhale' | 'exhale' | 'hold') => void;
 }
 
-/**
- * Component hiển thị người ngồi thiền với luồng khí luân chuyển.
- */
 const BreathingCircle: React.FC<BreathingCircleProps> = ({ 
   stage, 
   isActive, 
@@ -29,7 +26,6 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({
 
   const currentStep: BreathingStep = stage.steps[currentStepIndex];
 
-  // Effect để kích hoạt âm thanh ngay khi bắt đầu (First Start)
   useEffect(() => {
     if (isActive && !hasStartedRef.current && onStepChange) {
       onStepChange(stage.steps[0].action);
@@ -40,7 +36,6 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({
     }
   }, [isActive, onStepChange, stage.steps]);
 
-  // --- LOGIC NHỊP ĐỘ CHÍNH XÁC ---
   useEffect(() => {
     if (!isActive) {
       startTimeRef.current = null;
@@ -70,12 +65,9 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({
         lastTickRef.current = currentTick;
       }
 
-      // Kiểm tra kết thúc bước
       if (elapsedSeconds >= stepDuration) {
-        // Chuyển bước
         const nextIndex = (currentStepIndex + 1) % stage.steps.length;
         
-        // Trigger âm thanh
         if (onStepChange) {
           onStepChange(stage.steps[nextIndex].action);
         }
@@ -102,7 +94,6 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({
     }
   }, [isActive, stage]);
 
-  // --- ANIMATION CONFIGURATION ---
   const pathPoints = {
     top: { cx: 100, cy: 30 },
     midTop: { cx: 112, cy: 65 },
@@ -172,8 +163,13 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({
               <stop offset="0%" stopColor="#f1f5f9" stopOpacity="0.8" />
               <stop offset="100%" stopColor="#cbd5e1" stopOpacity="0.9" />
             </linearGradient>
+             <linearGradient id="bodyGradientDark" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#334155" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#1e293b" stopOpacity="0.9" />
+            </linearGradient>
           </defs>
 
+          {/* Hơi thở nền (Outer Glow) */}
           <motion.circle
             cx="100"
             cy="100"
@@ -193,17 +189,20 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({
             }}
           />
 
+          {/* Silhouette Cơ thể */}
           <path
             d="M100,20 C115,20 125,30 130,45 C135,60 150,70 160,90 C170,110 180,160 140,175 L60,175 C20,160 30,110 40,90 C50,70 65,60 70,45 C75,30 85,20 100,20 Z"
-            fill="url(#bodyGradient)"
+            className="fill-[url(#bodyGradient)] dark:fill-[url(#bodyGradientDark)]"
             stroke="#94a3b8"
             strokeWidth="1.5"
           />
           <path d="M60,175 Q100,190 140,175" fill="none" stroke="#94a3b8" strokeWidth="1.5" opacity="0.5" />
 
+          {/* Các điểm Chakra */}
           <circle cx="100" cy="30" r="2" fill="#94a3b8" opacity="0.5" />
           <circle cx="100" cy="140" r="3" fill="#94a3b8" opacity="0.8" />
 
+          {/* Đường dẫn khí */}
           <path
             d={visualPath}
             fill="none"
@@ -211,13 +210,16 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({
             strokeWidth="1"
             strokeDasharray="4 4"
             opacity="0.6"
+            className="dark:stroke-slate-600"
           />
 
+          {/* Hạt năng lượng (The Ball) */}
           <motion.circle
             r="6"
             animate={getBallAnimation(currentStep.action, currentStep.duration)}
           />
           
+          {/* Luồng khí bao quanh (Aura) */}
           <AnimatePresence>
             {currentStep.action === 'inhale' && (
               <motion.path
@@ -246,17 +248,17 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({
             className="flex flex-col items-center"
           >
             <h3 className={`text-3xl font-bold uppercase tracking-widest mb-1 ${
-               currentStep.action === 'inhale' ? 'text-blue-500' :
-               currentStep.action === 'exhale' ? 'text-emerald-500' : 'text-amber-500'
+               currentStep.action === 'inhale' ? 'text-blue-500 dark:text-blue-400' :
+               currentStep.action === 'exhale' ? 'text-emerald-500 dark:text-emerald-400' : 'text-amber-500 dark:text-amber-400'
             }`}>
               {currentStep.label}
             </h3>
             
-            <p className="text-slate-400 text-sm font-medium mb-2">
+            <p className="text-slate-400 dark:text-slate-500 text-sm font-medium mb-2">
               {getInstructionText(currentStep.action)}
             </p>
 
-            <span className="text-6xl font-light font-mono text-slate-700">
+            <span className="text-6xl font-light font-mono text-slate-700 dark:text-slate-200">
               {Math.ceil(timeLeft)}
             </span>
           </motion.div>

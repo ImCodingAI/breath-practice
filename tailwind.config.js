@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class', // Kích hoạt chế độ tối bằng class 'dark'
   content: [
     "./index.html",
     "./**/*.{js,ts,jsx,tsx}",

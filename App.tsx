@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wind, Heart, BarChart2, Flame, Settings } from 'lucide-react';
+import { Wind, Heart, BarChart2, Flame, Settings, Moon, Sun } from 'lucide-react';
 import { STAGES_DATA } from './constants';
 import { StageId, StageData, DailyStat } from './types';
 import StageCard from './components/StageCard';
@@ -13,22 +13,39 @@ import { getSavedProgress, saveProgressToDB, saveSession, getWeeklyStats, calcul
 const App: React.FC = () => {
   // --- STATE QUẢN LÝ ---
   const [currentStageId, setCurrentStageId] = useState<StageId | null>(null);
-  const [customStageData, setCustomStageData] = useState<StageData | null>(null); // Dữ liệu cho bài tập Custom
+  const [customStageData, setCustomStageData] = useState<StageData | null>(null);
   const [isPracticeMode, setIsPracticeMode] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isListVisible, setIsListVisible] = useState(true);
 
-  // State mới cho Dashboard & Custom
+  // State Dashboard & Custom & Dark Mode
   const [showStats, setShowStats] = useState(false);
   const [showCustomBuilder, setShowCustomBuilder] = useState(false);
   const [streak, setStreak] = useState(0);
   const [weeklyStats, setWeeklyStats] = useState<DailyStat[]>([]);
+  const [darkMode, setDarkMode] = useState(false);
 
   // --- LIFECYCLE ---
   useEffect(() => {
     loadUserData();
+    // Load dark mode preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      setDarkMode(true);
+    }
   }, []);
+
+  // Update HTML class for dark mode
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [darkMode]);
 
   const loadUserData = async () => {
     try {
@@ -74,37 +91,32 @@ const App: React.FC = () => {
     setIsPracticeMode(true);
   };
 
-  // Common: Xử lý khi kết thúc bài tập (dù hoàn thành hay thoát sớm)
-  // Logic: Lưu Session -> Tính lại Streak -> Update UI
+  const toggleDarkMode = () => setDarkMode(!darkMode);
+
+  // Logic kết thúc bài tập
   const handleSessionEnd = async (duration: number, isCompleted: boolean) => {
     const activeId = customStageData ? 'custom' : currentStageId;
     
-    // 1. Lưu Session vào DB
     if (activeId) {
       await saveSession(duration, activeId);
     }
 
-    // 2. Nếu hoàn thành bài tập thường -> Mở khóa level mới
     if (isCompleted && currentStageId && typeof currentStageId === 'number') {
-       if (currentStageId === progress && progress < 3) {
+       if (currentStageId === progress && progress < 4) { // Update max progress to 4
         const newProgress = progress + 1;
         setProgress(newProgress);
         await saveProgressToDB(newProgress);
       }
     }
 
-    // 3. Reload dữ liệu thống kê
     await loadUserData();
 
-    // 4. Đóng màn hình tập
     setIsPracticeMode(false);
-    // Nếu là Custom mode thì thoát hẳn ra menu
     if (customStageData) {
       setCustomStageData(null);
     }
   };
 
-  // Wrapper cho BreathingGuide
   const onGuideComplete = (duration: number) => handleSessionEnd(duration, true);
   const onGuideExit = (duration: number) => handleSessionEnd(duration, false);
 
@@ -119,7 +131,7 @@ const App: React.FC = () => {
   
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="animate-spin text-blue-500"><Wind size={40} /></div>
       </div>
     );
@@ -127,12 +139,11 @@ const App: React.FC = () => {
 
   // VIEW: Tập luyện (Breathing Guide)
   if (isPracticeMode) {
-    // Ưu tiên custom data nếu có
     const activeStage = customStageData || STAGES_DATA.find((s) => s.id === currentStageId);
     
     if (activeStage) {
       return (
-        <div className="min-h-screen bg-slate-50 overflow-hidden animate-fade-in">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden animate-fade-in text-slate-800 dark:text-slate-100 transition-colors duration-500">
           <BreathingGuide 
             stage={activeStage} 
             onComplete={onGuideComplete}
@@ -145,39 +156,48 @@ const App: React.FC = () => {
 
   // VIEW: Dashboard Chính
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 px-4 py-8 md:py-12 transition-colors duration-500">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4 py-8 md:py-12 transition-colors duration-500">
       <div className="max-w-5xl mx-auto">
         
-        {/* Header with Stats Button */}
+        {/* Header */}
         <header className="flex justify-between items-start mb-8">
           <div className="flex flex-col">
              <div 
-              className="inline-flex items-center p-2 bg-white/80 rounded-2xl shadow-sm cursor-pointer hover:shadow-md transition-shadow self-start"
+              className="inline-flex items-center p-2 bg-white/80 dark:bg-slate-800/80 rounded-2xl shadow-sm cursor-pointer hover:shadow-md transition-all self-start"
               onClick={handleExitApp}
             >
               <Wind className="w-6 h-6 text-blue-500 mr-2" />
-              <span className="text-xl font-bold text-slate-800 tracking-tight">Hơi Thở Tĩnh Lặng</span>
+              <span className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">Hơi Thở Tĩnh Lặng</span>
             </div>
             {!currentStageId && (
-               <p className={`text-slate-500 mt-2 text-sm max-w-xs transition-opacity duration-300 ${isListVisible ? 'opacity-100' : 'opacity-0'}`}>
+               <p className={`text-slate-500 dark:text-slate-400 mt-2 text-sm max-w-xs transition-opacity duration-300 ${isListVisible ? 'opacity-100' : 'opacity-0'}`}>
                  Tìm lại sự cân bằng trong từng hơi thở.
                </p>
             )}
           </div>
 
-          <button 
-            onClick={() => setShowStats(true)}
-            className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-600 hover:text-orange-500"
-          >
-            {streak > 0 ? (
-              <>
-                <Flame className="w-5 h-5 text-orange-500 fill-current animate-pulse" />
-                <span className="font-bold">{streak}</span>
-              </>
-            ) : (
-              <BarChart2 className="w-6 h-6" />
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-sm hover:shadow-md transition-all"
+            >
+              {darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+            </button>
+            
+            <button 
+              onClick={() => setShowStats(true)}
+              className="flex items-center gap-2 bg-white dark:bg-slate-800 px-4 py-2 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-600 dark:text-slate-300 hover:text-orange-500"
+            >
+              {streak > 0 ? (
+                <>
+                  <Flame className="w-5 h-5 text-orange-500 fill-current animate-pulse" />
+                  <span className="font-bold">{streak}</span>
+                </>
+              ) : (
+                <BarChart2 className="w-6 h-6" />
+              )}
+            </button>
+          </div>
         </header>
 
         {/* Modal: Statistics */}
@@ -198,7 +218,7 @@ const App: React.FC = () => {
         )}
 
         {/* Main Content */}
-        {!currentStageId && <ProgressBar currentLevel={progress} totalLevels={3} />}
+        {!currentStageId && <ProgressBar currentLevel={progress} totalLevels={4} />}
 
         <div className="relative min-h-[400px]">
           
@@ -227,7 +247,7 @@ const App: React.FC = () => {
                 ${isListVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}
               `}
             >
-              {/* Render 3 bài tập chính */}
+              {/* Render bài tập chính */}
               {STAGES_DATA.map((stage) => (
                 <StageCard
                   key={stage.id}
@@ -238,22 +258,22 @@ const App: React.FC = () => {
                 />
               ))}
 
-              {/* Card đặc biệt cho Custom Mode */}
+              {/* Card Custom Mode */}
               <div 
                 onClick={handleOpenCustomBuilder}
-                className="relative p-6 rounded-2xl bg-white border-2 border-dashed border-slate-300 hover:border-rose-400 hover:bg-rose-50 cursor-pointer transition-all group flex flex-col items-center justify-center text-center min-h-[280px]"
+                className="relative p-6 rounded-2xl bg-white dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-rose-400 dark:hover:border-rose-500 hover:bg-rose-50 dark:hover:bg-slate-700 cursor-pointer transition-all group flex flex-col items-center justify-center text-center min-h-[280px]"
               >
-                <div className="bg-rose-100 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
+                <div className="bg-rose-100 dark:bg-rose-900/50 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
                   <Settings className="w-8 h-8 text-rose-500" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-700 mb-2 group-hover:text-rose-600">Tự do</h3>
-                <p className="text-slate-500 text-sm">Thiết lập thời gian riêng</p>
+                <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200 mb-2 group-hover:text-rose-600 dark:group-hover:text-rose-400">Tự do</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Thiết lập thời gian riêng</p>
               </div>
             </div>
           )}
         </div>
 
-        <footer className={`text-center text-slate-400 text-sm flex flex-col items-center gap-2 transition-opacity duration-300 ${currentStageId ? 'opacity-0 hidden' : 'opacity-100'}`}>
+        <footer className={`text-center text-slate-400 dark:text-slate-500 text-sm flex flex-col items-center gap-2 transition-opacity duration-300 ${currentStageId ? 'opacity-0 hidden' : 'opacity-100'}`}>
           <div className="flex items-center gap-1">
             <span>Được tạo với</span>
             <Heart className="w-4 h-4 text-red-400 fill-current" />

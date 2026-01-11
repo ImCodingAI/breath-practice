@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings, Play, RefreshCw, X } from 'lucide-react';
+import { Settings, Play, X } from 'lucide-react';
 import { StageData, BreathingStep } from '../types';
 
 interface CustomBreathingBuilderProps {
@@ -8,7 +8,6 @@ interface CustomBreathingBuilderProps {
 }
 
 const CustomBreathingBuilder: React.FC<CustomBreathingBuilderProps> = ({ onStart, onClose }) => {
-  // State cho 4 giai đoạn
   const [inhale, setInhale] = useState(4);
   const [hold1, setHold1] = useState(4);
   const [exhale, setExhale] = useState(4);
@@ -26,7 +25,7 @@ const CustomBreathingBuilder: React.FC<CustomBreathingBuilderProps> = ({ onStart
       id: 'custom',
       title: 'Hơi Thở Tự Do',
       description: 'Chế độ tùy chỉnh theo nhịp điệu riêng của bạn.',
-      color: 'bg-rose-100',
+      color: 'bg-rose-100 dark:bg-rose-900',
       benefits: ['Tùy biến theo nhu cầu cá nhân', 'Thử nghiệm các kỹ thuật mới'],
       instruction: 'Thực hiện theo cấu hình bạn vừa thiết lập.',
       steps: steps
@@ -38,7 +37,7 @@ const CustomBreathingBuilder: React.FC<CustomBreathingBuilderProps> = ({ onStart
   const SliderControl = ({ label, val, setVal, color }: any) => (
     <div className="mb-6">
       <div className="flex justify-between mb-2">
-        <label className="text-slate-600 font-medium text-sm">{label}</label>
+        <label className="text-slate-600 dark:text-slate-300 font-medium text-sm">{label}</label>
         <span className={`font-bold ${color}`}>{val} giây</span>
       </div>
       <input
@@ -48,20 +47,20 @@ const CustomBreathingBuilder: React.FC<CustomBreathingBuilderProps> = ({ onStart
         step="1"
         value={val}
         onChange={(e) => setVal(Number(e.target.value))}
-        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600"
+        className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-600 dark:accent-slate-400"
       />
     </div>
   );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-rose-50">
+      <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden transition-colors">
+        <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-rose-50 dark:bg-rose-900/20">
           <div className="flex items-center gap-2">
             <Settings className="text-rose-500 w-5 h-5" />
-            <h2 className="text-xl font-bold text-slate-800">Thiết lập Hơi thở</h2>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white">Thiết lập Hơi thở</h2>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-rose-100 rounded-full transition-colors text-slate-500">
+          <button onClick={onClose} className="p-2 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded-full transition-colors text-slate-500 dark:text-slate-400">
             <X size={20} />
           </button>
         </div>
@@ -73,9 +72,9 @@ const CustomBreathingBuilder: React.FC<CustomBreathingBuilderProps> = ({ onStart
           <SliderControl label="Nín thở (Xả hơi)" val={hold2} setVal={setHold2} color="text-slate-500" />
 
           {/* Preview Cycle */}
-          <div className="mt-8 p-4 bg-slate-50 rounded-xl border border-slate-100 text-center">
+          <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-600 text-center">
             <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">Chu trình dự kiến</p>
-            <div className="flex items-center justify-center gap-2 font-mono text-lg text-slate-700">
+            <div className="flex items-center justify-center gap-2 font-mono text-lg text-slate-700 dark:text-slate-200">
               <span className="text-blue-500">{inhale}s</span>
               <span>-</span>
               <span className="text-amber-500">{hold1}s</span>
@@ -88,13 +87,13 @@ const CustomBreathingBuilder: React.FC<CustomBreathingBuilderProps> = ({ onStart
           </div>
         </div>
 
-        <div className="p-6 bg-slate-50 border-t border-slate-100">
+        <div className="p-6 bg-slate-50 dark:bg-slate-700/30 border-t border-slate-100 dark:border-slate-700">
           <button
             onClick={handleStart}
             disabled={inhale === 0 || exhale === 0}
             className={`
               w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center shadow-lg transition-all
-              ${(inhale === 0 || exhale === 0) ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-rose-500 text-white hover:bg-rose-600 hover:shadow-xl hover:scale-[1.02]'}
+              ${(inhale === 0 || exhale === 0) ? 'bg-slate-300 dark:bg-slate-600 text-slate-500 cursor-not-allowed' : 'bg-rose-500 text-white hover:bg-rose-600 hover:shadow-xl hover:scale-[1.02]'}
             `}
           >
             <Play className="w-5 h-5 mr-2 fill-current" />

@@ -12,7 +12,7 @@ export const STAGES_DATA: StageData[] = [
     id: 1,
     title: 'Thở Bụng',
     description: 'Bài tập cơ bản giúp thư giãn cơ thể. Hít vào nhẹ nhàng và thở ra sâu.',
-    color: 'bg-blue-100', // Màu chủ đạo cho Stage 1
+    color: 'bg-blue-100 dark:bg-blue-900', 
     benefits: [
       'Giảm căng thẳng tức thì',
       'Cải thiện chức năng phổi',
@@ -29,7 +29,7 @@ export const STAGES_DATA: StageData[] = [
     id: 2,
     title: 'Cân Bằng',
     description: 'Kéo dài hơi thở ra để kích hoạt hệ thần kinh đối giao cảm, giúp bình tĩnh.',
-    color: 'bg-emerald-100', // Màu chủ đạo cho Stage 2
+    color: 'bg-emerald-100 dark:bg-emerald-900', 
     benefits: [
       'Cân bằng hệ thần kinh',
       'Giúp đi vào giấc ngủ dễ dàng hơn',
@@ -46,7 +46,7 @@ export const STAGES_DATA: StageData[] = [
     id: 3,
     title: 'Box Breathing',
     description: 'Kỹ thuật thở hộp giúp tăng cường sự tập trung và kiểm soát căng thẳng cực độ.',
-    color: 'bg-indigo-100', // Màu chủ đạo cho Stage 3
+    color: 'bg-indigo-100 dark:bg-indigo-900', 
     benefits: [
       'Tăng cường sự tập trung cao độ',
       'Kiểm soát cảm xúc mạnh',
@@ -59,6 +59,24 @@ export const STAGES_DATA: StageData[] = [
       { action: 'hold', label: 'Nín thở', duration: 4, scale: 1.5 }, // Giữ hơi khi phổi đầy
       { action: 'exhale', label: 'Thở ra', duration: 4, scale: 1.0 },
       { action: 'hold', label: 'Nín thở', duration: 4, scale: 1.0 }, // Giữ hơi khi phổi rỗng
+    ],
+  },
+  {
+    id: 4,
+    title: 'Thở 4-7-8',
+    description: 'Phương pháp "thuốc an thần tự nhiên" giúp đi vào giấc ngủ trong vòng 60 giây.',
+    color: 'bg-purple-100 dark:bg-purple-900', 
+    benefits: [
+      'Hỗ trợ điều trị mất ngủ hiệu quả',
+      'Giảm cơn thèm ăn',
+      'Kiểm soát phản ứng giận dữ'
+    ],
+    instruction: 'Đặt đầu lưỡi chạm vào nướu sau răng cửa trên. Thở ra mạnh bằng miệng tạo tiếng "phù".',
+    steps: [
+      // Chu kỳ 4-7-8
+      { action: 'inhale', label: 'Hít vào', duration: 4, scale: 1.5 },
+      { action: 'hold', label: 'Nín thở', duration: 7, scale: 1.5 }, 
+      { action: 'exhale', label: 'Thở ra', duration: 8, scale: 1.0 },
     ],
   },
 ];

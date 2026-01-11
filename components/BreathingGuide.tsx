@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Check, Quote, Volume2, VolumeX } from 'lucide-react';
+import { X, Check, Quote, Volume2, VolumeX, CloudRain, Trees, Volume1 } from 'lucide-react';
 import { StageData } from '../types';
 import { INSPIRATIONAL_QUOTES } from '../constants';
 import BreathingCircle from './BreathingCircle';
-import { useBreathingSound } from '../hooks/useBreathingSound';
+import { useBreathingSound, AmbientType } from '../hooks/useBreathingSound';
 
 interface BreathingGuideProps {
   stage: StageData;
@@ -19,8 +19,9 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
   const [showCompletion, setShowCompletion] = useState(false); 
   const [completedCycles, setCompletedCycles] = useState(0);   
   const [randomQuote, setRandomQuote] = useState('');          
+  const [showAmbientMenu, setShowAmbientMenu] = useState(false);
 
-  const { playInhale, playExhale, toggleMute, isMuted } = useBreathingSound();
+  const { playInhale, playExhale, toggleMute, isMuted, currentAmbient, setAmbient } = useBreathingSound();
 
   useEffect(() => {
     const startTimer = setTimeout(() => setIsActive(true), 500);
@@ -41,12 +42,9 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
   const handleCycleComplete = useCallback(() => {
     setCompletedCycles(prev => {
       const newCount = prev + 1;
-      if (newCount >= TARGET_CYCLES && stage.id !== 'custom') {
-        return newCount; 
-      }
       return newCount;
     });
-  }, [stage.id]);
+  }, []);
 
   const handleStepChange = useCallback((action: 'inhale' | 'exhale' | 'hold') => {
     if (action === 'inhale') {
@@ -72,31 +70,31 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
 
   if (showCompletion) {
     return (
-      <div className="flex flex-col items-center justify-center h-full animate-fade-in text-center p-6 bg-slate-50 min-h-screen">
-        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border border-slate-100 relative overflow-hidden">
+      <div className="flex flex-col items-center justify-center h-full animate-fade-in text-center p-6 bg-slate-50 dark:bg-slate-900 min-h-screen">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl max-w-sm w-full border border-slate-100 dark:border-slate-700 relative overflow-hidden transition-colors">
            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-emerald-400"></div>
 
           <div className="mb-6 flex justify-center mt-4">
-            <div className="bg-emerald-100 p-4 rounded-full ring-8 ring-emerald-50 animate-bounce-slow">
-              <Check className="w-12 h-12 text-emerald-600" />
+            <div className="bg-emerald-100 dark:bg-emerald-900/50 p-4 rounded-full ring-8 ring-emerald-50 dark:ring-emerald-900/20 animate-bounce-slow">
+              <Check className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
             </div>
           </div>
           
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Tuyệt vời!</h2>
-          <p className="text-slate-500 mb-6 text-sm">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Tuyệt vời!</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">
              Bạn đã thư giãn trong {Math.floor(sessionDuration / 60)} phút {sessionDuration % 60} giây.
           </p>
 
-          <div className="bg-slate-50 p-6 rounded-xl mb-8 relative">
-            <Quote className="w-8 h-8 text-blue-200 absolute -top-3 -left-2 fill-current" />
-            <p className="text-slate-700 italic font-medium leading-relaxed z-10 relative">
+          <div className="bg-slate-50 dark:bg-slate-700/50 p-6 rounded-xl mb-8 relative">
+            <Quote className="w-8 h-8 text-blue-200 dark:text-blue-500/30 absolute -top-3 -left-2 fill-current" />
+            <p className="text-slate-700 dark:text-slate-200 italic font-medium leading-relaxed z-10 relative">
               "{randomQuote}"
             </p>
           </div>
 
           <button
             onClick={confirmCompletion}
-            className="w-full py-4 bg-slate-800 text-white rounded-2xl font-bold hover:bg-slate-700 transition-all transform hover:scale-[1.02] shadow-lg"
+            className="w-full py-4 bg-slate-800 dark:bg-slate-700 text-white rounded-2xl font-bold hover:bg-slate-700 dark:hover:bg-slate-600 transition-all transform hover:scale-[1.02] shadow-lg"
           >
             Quay về trang chủ
           </button>
@@ -108,18 +106,53 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
   return (
     <div className="relative flex flex-col items-center justify-between h-screen w-full max-w-md mx-auto py-6">
       
-      <div className="w-full flex justify-between items-center px-6 pt-2">
+      {/* Header Controls */}
+      <div className="w-full flex justify-between items-center px-6 pt-2 z-20">
         <div className="flex flex-col">
-          <h2 className="text-xl font-bold text-slate-700">{stage.title}</h2>
+          <h2 className="text-xl font-bold text-slate-700 dark:text-slate-200">{stage.title}</h2>
           <span className="text-xs text-slate-400 font-medium tracking-wider uppercase">
             {stage.id === 'custom' ? `Thời gian: ${Math.floor(sessionDuration/60)}:${(sessionDuration%60).toString().padStart(2,'0')}` : `Chu kỳ: ${completedCycles}/${TARGET_CYCLES}`}
           </span>
         </div>
         
         <div className="flex items-center gap-2">
+           {/* Ambient Sound Menu Trigger */}
+           <div className="relative">
+             <button 
+              onClick={() => setShowAmbientMenu(!showAmbientMenu)}
+              className={`p-2 rounded-full transition-colors ${currentAmbient !== 'none' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}
+              title="Nhạc nền"
+            >
+              <Volume1 size={24} />
+            </button>
+            
+            {showAmbientMenu && (
+              <div className="absolute right-0 top-12 bg-white dark:bg-slate-800 shadow-xl rounded-2xl p-2 w-48 border border-slate-100 dark:border-slate-700 flex flex-col gap-1 animate-fade-in">
+                <button 
+                  onClick={() => { setAmbient('none'); setShowAmbientMenu(false); }}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${currentAmbient === 'none' ? 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+                >
+                  <VolumeX size={16} /> Tắt nhạc nền
+                </button>
+                <button 
+                  onClick={() => { setAmbient('rain'); setShowAmbientMenu(false); }}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${currentAmbient === 'rain' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+                >
+                  <CloudRain size={16} /> Tiếng mưa
+                </button>
+                <button 
+                  onClick={() => { setAmbient('forest'); setShowAmbientMenu(false); }}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${currentAmbient === 'forest' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}
+                >
+                  <Trees size={16} /> Tiếng rừng
+                </button>
+              </div>
+            )}
+           </div>
+
           <button 
             onClick={toggleMute}
-            className={`p-2 rounded-full transition-colors ${!isMuted ? 'bg-blue-50 text-blue-500' : 'bg-slate-100 text-slate-400'}`}
+            className={`p-2 rounded-full transition-colors ${!isMuted ? 'bg-blue-50 text-blue-500 dark:bg-blue-900 dark:text-blue-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}
             title={isMuted ? "Bật âm thanh" : "Tắt âm thanh"}
           >
             {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
@@ -127,7 +160,7 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
 
           <button 
             onClick={handleExitClick}
-            className="p-2 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
+            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
           >
             <X size={24} />
           </button>
@@ -145,13 +178,13 @@ const BreathingGuide: React.FC<BreathingGuideProps> = ({ stage, onComplete, onEx
       </div>
 
       <div className="w-full px-8 pb-8 text-center">
-        <p className="text-slate-500 mb-10 italic text-sm font-medium opacity-80 animate-pulse">
+        <p className="text-slate-500 dark:text-slate-400 mb-10 italic text-sm font-medium opacity-80 animate-pulse">
           "Hãy tập trung vào hơi thở, thả lỏng vai và thư giãn tâm trí."
         </p>
         
         <button
           onClick={handleFinish}
-          className="w-full bg-white border border-slate-200 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 transition-all shadow-sm hover:shadow-md"
+          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-200 py-4 rounded-2xl font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm hover:shadow-md"
         >
           Kết thúc
         </button>

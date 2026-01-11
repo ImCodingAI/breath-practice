@@ -3,14 +3,16 @@
 ## 1. Tổng quan Dự án
 **Tên ứng dụng:** Hơi Thở Tĩnh Lặng (Serene Breath)
 **Mục tiêu:** Hỗ trợ người dùng thực hành các bài tập hít thở từ cơ bản đến nâng cao để giảm căng thẳng và tăng cường sự tập trung.
-**Nền tảng:** Web Application (React + TypeScript).
+**Nền tảng:** Web Application (React + TypeScript + Vite).
 
 ## 2. Công nghệ Sử dụng (Tech Stack)
 
 | Thành phần | Công nghệ | Mục đích |
 | :--- | :--- | :--- |
-| **Core Framework** | React 19.2.3 | Xây dựng giao diện người dùng dựa trên Component. |
-| **Styling** | Tailwind CSS | Thiết kế giao diện nhanh, Responsive, Utility-first. |
+| **Build Tool** | **Vite** | Môi trường phát triển cực nhanh, Hot Module Replacement (HMR) và tối ưu hóa Build. |
+| **Core Framework** | React 18.2.0 | Xây dựng giao diện người dùng dựa trên Component. |
+| **Styling** | Tailwind CSS 3.4 | Thiết kế giao diện nhanh, Responsive, Utility-first. |
+| **Audio Engine** | **Howler.js** | Xử lý âm thanh độ trễ thấp cho các nhịp thở (Hít vào/Thở ra). |
 | **Animation** | Framer Motion | Hiệu ứng chuyển động mượt mà cho vòng tròn hít thở và UI. |
 | **Icons** | Lucide React | Hệ thống icon nhẹ, đồng bộ. |
 | **Charts** | Recharts | Vẽ biểu đồ thống kê quá trình tập luyện. |
@@ -19,50 +21,65 @@
 
 ## 3. Cấu trúc Mã nguồn
 
-### 3.1. Các tệp tin chính (Core Files)
-*   **`App.tsx`**: Component gốc. Quản lý trạng thái toàn cục của ứng dụng (Stage đang chọn, Chế độ tập luyện, Hiển thị Modal). Điều phối luồng giữa Dashboard và Breathing Guide.
-*   **`types.ts`**: Định nghĩa TypeScript Interfaces quan trọng (`StageData`, `BreathingStep`, `DailyStat`) đảm bảo tính nhất quán dữ liệu.
-*   **`constants.ts`**: Chứa dữ liệu tĩnh ("Source of Truth") cho các bài tập (Thở bụng, Cân bằng, Box Breathing) và danh sách câu trích dẫn.
+### 3.1. Cấu hình & Build (Configuration)
+*   **`vite.config.ts`**: Cấu hình Vite Server và Plugin React.
+*   **`tailwind.config.js`**: Cấu hình theme và animation cho Tailwind.
+*   **`package.json`**: Quản lý dependencies và scripts (dev, build, preview).
 
-### 3.2. Thành phần Giao diện (Components)
-*   **`BreathingGuide.tsx`**: Màn hình thực hành chính. Quản lý phiên tập (Session), tính toán thời gian và điều hướng khi hoàn thành.
-*   **`BreathingCircle.tsx`**: "Trái tim" của giao diện.
-    *   Sử dụng SVG và Framer Motion để vẽ hoạt ảnh người ngồi thiền và luồng khí.
-    *   Logic `setInterval` kết hợp `Date.now()` để đảm bảo bộ đếm thời gian chính xác tuyệt đối, không bị trôi (drift) khi chạy lâu.
-*   **`StageCard.tsx`**: Thẻ hiển thị bài tập ở màn hình chính, xử lý trạng thái Khóa/Mở khóa.
-*   **`StageDetail.tsx`**: Màn hình chi tiết trước khi vào bài tập (Hướng dẫn, Lợi ích).
-*   **`CustomBreathingBuilder.tsx`**: Modal cho phép người dùng tự cấu hình nhịp thở (Hít - Nín - Thở - Nín).
-*   **`StatisticsDashboard.tsx`**: Modal hiển thị biểu đồ và thống kê thành tích.
+### 3.2. Các tệp tin chính (Core Files)
+*   **`App.tsx`**: Component gốc. Quản lý trạng thái toàn cục, điều phối luồng giữa Dashboard và Breathing Guide.
+*   **`index.tsx`**: Entry point, kiểm tra an toàn Mounting Point trước khi render React.
+*   **`types.ts`**: Định nghĩa TypeScript Interfaces (`StageData`, `BreathingStep`, `DailyStat`).
+*   **`constants.ts`**: Dữ liệu tĩnh các bài tập và danh sách câu trích dẫn.
 
-### 3.3. Quản lý Dữ liệu (Utils)
-*   **`utils/db.ts`**: Layer tương tác trực tiếp với IndexedDB của trình duyệt.
-    *   Store `user_progress`: Lưu cấp độ hiện tại (Level).
-    *   Store `sessions`: Lưu lịch sử từng lần tập (Ngày giờ, thời lượng).
-    *   Hàm `calculateStreak`: Thuật toán tính chuỗi ngày liên tiếp dựa trên lịch sử tập luyện.
+### 3.3. Hooks & Logic
+*   **`hooks/useBreathingSound.ts`**: Hook tùy chỉnh quản lý âm thanh.
+    *   Sử dụng `Howler` để preload và phát âm thanh.
+    *   Âm thanh Hít vào: Tiếng chuông (Singing Bowl).
+    *   Âm thanh Thở ra: Tiếng sóng/gió (Ocean/Wind).
+    *   Quản lý trạng thái Mute/Unmute.
+*   **`utils/db.ts`**: Layer tương tác với IndexedDB (Lưu Level, Lịch sử Session).
+
+### 3.4. Thành phần Giao diện (Components)
+*   **`BreathingGuide.tsx`**: Màn hình thực hành chính. Kết nối logic thời gian và âm thanh.
+*   **`BreathingCircle.tsx`**: Hiển thị trực quan nhịp thở.
+    *   Đồng bộ hóa animation vòng tròn với logic đếm ngược.
+    *   Gửi tín hiệu (`onStepChange`) để kích hoạt âm thanh.
+*   **`StageCard.tsx`**, **`StageDetail.tsx`**: Các thành phần hiển thị danh sách và chi tiết bài tập.
+*   **`CustomBreathingBuilder.tsx`**: Modal tạo bài tập tùy chỉnh.
+*   **`StatisticsDashboard.tsx`**: Modal báo cáo thống kê.
 
 ## 4. Luồng Hoạt động (Logic Flow)
 
 1.  **Khởi động:**
-    *   Ứng dụng tải dữ liệu từ IndexedDB (Level hiện tại, Streak).
-    *   Hiển thị Dashboard với danh sách bài tập. Các bài tập chưa đạt Level sẽ bị khóa.
+    *   Vite khởi tạo ứng dụng, mount vào `#root`.
+    *   Tải dữ liệu tiến trình từ IndexedDB.
 
-2.  **Tập luyện:**
-    *   Người dùng chọn bài tập -> Xem chi tiết -> Bắt đầu.
-    *   `BreathingGuide` được mount -> Kích hoạt `BreathingCircle`.
-    *   Vòng tròn hít thở chạy theo mảng `steps` được định nghĩa trong `constants.ts` hoặc dữ liệu Custom.
+2.  **Tập luyện & Âm thanh:**
+    *   Khi vào bài tập, `useBreathingSound` preload file âm thanh.
+    *   `BreathingCircle` chạy timer. Mỗi khi chuyển bước (Hít -> Nín -> Thở), nó gọi callback `onStepChange`.
+    *   `BreathingGuide` nhận callback và kích hoạt `playInhale()` hoặc `playExhale()`.
 
-3.  **Kết thúc phiên:**
-    *   Người dùng hoàn thành đủ số vòng hoặc bấm kết thúc.
-    *   Dữ liệu thời gian tập được lưu vào `sessions` trong IndexedDB.
-    *   Nếu hoàn thành bài tập ở Level hiện tại -> Mở khóa Level tiếp theo.
-    *   Hiển thị màn hình chúc mừng với câu trích dẫn ngẫu nhiên.
+3.  **Lưu trữ & Thống kê:**
+    *   Kết thúc phiên tập -> Lưu vào IndexedDB.
+    *   Cập nhật Streak và biểu đồ ngay lập tức.
 
-4.  **Chế độ Tùy chỉnh (Custom Mode):**
-    *   Cho phép người dùng tạo bài tập với thời gian Hít/Nín/Thở tùy ý.
-    *   Dữ liệu này được tiêm (inject) vào `BreathingGuide` như một bài tập thông thường nhưng có ID là `custom`.
+## 5. Thay đổi gần nhất (Changelog)
 
-## 5. Thay đổi gần nhất
-*   **Loại bỏ Audio:** Đã gỡ bỏ hoàn toàn thư viện `react-player` và logic phát nhạc nền để tối ưu hóa hiệu năng và tập trung vào trải nghiệm thị giác.
+*   **Migrate sang Vite:** Chuyển đổi từ cấu trúc HTML thuần/ImportMap sang kiến trúc Build chuẩn với Vite để hỗ trợ TypeScript tốt hơn và quản lý dependency dễ dàng.
+*   **Sửa lỗi Mounting:** Thêm kiểm tra an toàn `document.getElementById('root')` trong `index.tsx` để tránh lỗi màn hình trắng.
+*   **Tích hợp Howler.js:** Thêm lại tính năng âm thanh hướng dẫn với thư viện chuyên dụng, thay thế giải pháp cũ gây lag.
+*   **Cập nhật TypeScript:** Thêm `@types/node` để sửa lỗi build trên Vercel/Node environment.
 
-## 6. Kết luận
-Ứng dụng được thiết kế theo kiến trúc **Component-based** sạch sẽ, tách biệt rõ ràng giữa logic (Hooks, Utils) và giao diện (Components). Việc sử dụng **IndexedDB** giúp ứng dụng hoạt động hoàn toàn Offline mà vẫn lưu giữ được tiến trình người dùng lâu dài.
+## 6. Hướng dẫn Cài đặt & Chạy (Dev)
+
+```bash
+# Cài đặt dependencies
+npm install
+
+# Chạy môi trường dev
+npm run dev
+
+# Build production
+npm run build
+```
